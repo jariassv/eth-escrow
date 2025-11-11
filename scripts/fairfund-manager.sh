@@ -7,13 +7,13 @@ ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 # Defaults (can be overridden via environment variables)
 ANVIL_CMD=${ANVIL_CMD:-anvil}
-ANVIL_ARGS=${ANVIL_ARGS:---host 127.0.0.1 --port 8545 --chain-id 31337}
+ANVIL_ARGS=${ANVIL_ARGS:-"--host 127.0.0.1 --port 8545 --chain-id 31337"}
 ANVIL_PID_FILE="${ROOT_DIR}/tmp/anvil.pid"
 ANVIL_LOG_FILE="${ROOT_DIR}/logs/anvil.log"
 
 NEXT_WORKDIR=${NEXT_WORKDIR:-${ROOT_DIR}/web-fairfund}
 NEXT_CMD=${NEXT_CMD:-pnpm}
-NEXT_ARGS=${NEXT_ARGS:-dev}
+NEXT_ARGS=${NEXT_ARGS:-"dev"}
 NEXT_PID_FILE="${ROOT_DIR}/tmp/next.pid"
 NEXT_LOG_FILE="${ROOT_DIR}/logs/next.log"
 
@@ -28,6 +28,7 @@ ABI_TARGET_DIR=${ABI_TARGET_DIR:-${ROOT_DIR}/web-fairfund/lib/abi}
 ABI_TARGET_FILE="${ABI_TARGET_DIR}/FairFund.json"
 
 NEXT_ENV_FILE=${NEXT_ENV_FILE:-${ROOT_DIR}/web-fairfund/.env.local}
+SUPPORTED_TOKENS_JSON=${SUPPORTED_TOKENS_JSON:-${NEXT_PUBLIC_SUPPORTED_TOKENS:-}}
 
 # Utility --------------------------------------------------------------------
 
@@ -44,7 +45,23 @@ require_command() {
     if ! command -v "${cmd}" >/dev/null 2>&1; then
         log "Error: comando requerido no encontrado: ${cmd}"
         exit 1
-    }
+    fi
+}
+
+require_env_vars() {
+    local missing=0
+    for var_name in "$@"; do
+        local value="${!var_name-}"
+        if [[ -z "${value}" ]]; then
+            log "Error: variable de entorno requerida '${var_name}' no está definida."
+            missing=1
+        fi
+    done
+
+    if [[ "${missing}" -eq 1 ]]; then
+        log "Sugerencia: revisa 'config/env.example' y exporta las variables necesarias antes de ejecutar este comando."
+        exit 1
+    fi
 }
 
 stop_process() {
@@ -68,7 +85,7 @@ stop_process() {
 
 start_background() {
     local cmd="$1"
-    local args="$2"
+    local args_string="$2"
     local workdir="$3"
     local pid_file="$4"
     local log_file="$5"
@@ -81,10 +98,12 @@ start_background() {
         return
     fi
 
-    log "Iniciando ${cmd} (${args})..."
+    read -r -a args_array <<< "${args_string}"
+
+    log "Iniciando ${cmd} ${args_string}"
     (
         cd "${workdir:-${ROOT_DIR}}" || exit 1
-        nohup "${cmd}" ${args} >>"${log_file}" 2>&1 &
+        nohup "${cmd}" "${args_array[@]}" >>"${log_file}" 2>&1 &
         echo $! >"${pid_file}"
     )
     log "Proceso iniciado. PID $(cat "${pid_file}"). Logs: ${log_file}"
@@ -101,9 +120,17 @@ update_env_var() {
     if grep -q "^${key}=" "${file}"; then
         sed -i.bak "s|^${key}=.*|${key}=${value}|g" "${file}"
     else
-        printf '%s=%s\n' "${key}" "${value}" >>"${file}"
+        printf '%s=%s
+' "${key}" "${value}" >>"${file}"
     fi
     rm -f "${file}.bak"
+}
+
+update_supported_tokens() {
+    if [[ -n "${SUPPORTED_TOKENS_JSON}" ]]; then
+        update_env_var "${NEXT_ENV_FILE}" "NEXT_PUBLIC_SUPPORTED_TOKENS" "${SUPPORTED_TOKENS_JSON}"
+        log "Tokens soportados registrados en ${NEXT_ENV_FILE}"
+    fi
 }
 
 # Service management ---------------------------------------------------------
@@ -134,6 +161,7 @@ restart_services() {
 run_deploy() {
     require_command forge
     require_command jq
+    require_env_vars PRIVATE_KEY_DEPLOYER FAIRFUND_OWNER FAIRFUND_FEE_VAULT FAIRFUND_PLATFORM_FEE_BPS
 
     local broadcast_flag=""
     [[ "${BROADCAST}" == "true" ]] && broadcast_flag="--broadcast"
@@ -148,6 +176,11 @@ run_deploy() {
             ${broadcast_flag} \
             --json >"${ROOT_DIR}/tmp/deploy-output.json"
     )
+
+    if [[ ! -s "${ROOT_DIR}/tmp/deploy-output.json" ]]; then
+        log "El despliegue no generó salida. Revisa los mensajes de Forge anteriores."
+        exit 1
+    fi
 
     local address
     address="$(jq -r '.transactions[-1].contractAddress // empty' "${ROOT_DIR}/tmp/deploy-output.json")"
@@ -181,6 +214,7 @@ update_next_env() {
     update_env_var "${NEXT_ENV_FILE}" "NEXT_PUBLIC_FAIRFUND_ADDRESS" "${contract_address}"
     update_env_var "${NEXT_ENV_FILE}" "NEXT_PUBLIC_CHAIN_ID" "${CHAIN_ID}"
     update_env_var "${NEXT_ENV_FILE}" "NEXT_PUBLIC_RPC_URL" "${RPC_URL}"
+    update_supported_tokens
     log "Variables actualizadas en ${NEXT_ENV_FILE}"
 }
 
@@ -210,7 +244,8 @@ Comandos disponibles:
 
 Variables importantes (se pueden sobrescribir):
   ANVIL_CMD, ANVIL_ARGS, NEXT_WORKDIR, NEXT_CMD, NEXT_ARGS,
-  RPC_URL, CHAIN_ID, BROADCAST, ABI_TARGET_DIR, NEXT_ENV_FILE.
+  RPC_URL, CHAIN_ID, BROADCAST, ABI_TARGET_DIR, NEXT_ENV_FILE,
+  SUPPORTED_TOKENS_JSON.
 EOF
 }
 
@@ -256,5 +291,3 @@ main() {
 }
 
 main "$@"
-
-
