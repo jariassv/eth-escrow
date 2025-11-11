@@ -16,12 +16,15 @@ out/
 .env.*
 !.env.example
 .env.local
+!web-fairfund/.env.example
 
 # Foundry
 cache/
 out/
 lib/
 !smart-contract/lib/
+!web-fairfund/lib/
+!web-fairfund/src/lib/
 
 # OS / Editor
 .DS_Store
