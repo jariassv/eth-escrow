@@ -21,6 +21,7 @@ out/
 cache/
 out/
 lib/
+!smart-contract/lib/
 
 # OS / Editor
 .DS_Store
