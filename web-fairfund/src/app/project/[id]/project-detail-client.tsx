@@ -2,9 +2,15 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useProject } from "@/hooks/useProjects";
+import { useWallet } from "@/hooks/useWallet";
+import { useProjectActions } from "@/hooks/useProjectActions";
 
 const DetailSkeleton = () => (
   <div className="mt-6 grid gap-6 md:grid-cols-[2fr,1fr]">
@@ -16,10 +22,25 @@ const DetailSkeleton = () => (
   </div>
 );
 
+const contributionSchema = z.object({
+  amount: z
+    .string()
+    .trim()
+    .regex(/^(?!0(?:\.0+)?$)\d+(?:\.\d+)?$/, {
+      message: "Ingresa un monto válido",
+    }),
+});
+
+const fieldClasses =
+  "flex flex-col gap-2 text-sm text-[rgb(var(--foreground))]/80";
+const inputClasses =
+  "w-full rounded-md border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[rgb(var(--primary))]";
+
 export const ProjectDetailClient = () => {
   const params = useParams<{ id: string }>();
   const projectId = Number(params?.id ?? 0);
   const { data, isLoading, error } = useProject(projectId);
+  const { status } = useWallet();
 
   if (isLoading) {
     return (
@@ -58,6 +79,32 @@ export const ProjectDetailClient = () => {
     );
   }
 
+  const { fund, refund, fundStatus, refundStatus, message } = useProjectActions(
+    projectId,
+    data.tokenAddress
+  );
+
+  const contributionForm = useForm<z.infer<typeof contributionSchema>>({
+    resolver: zodResolver(contributionSchema),
+    defaultValues: { amount: "" },
+  });
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = contributionForm;
+
+  const onContribute = handleSubmit(async ({ amount }) => {
+    await fund(amount);
+    reset({ amount: "" });
+  });
+
+  const isWalletConnected = status === "connected";
+  const isFunding = fundStatus === "pending" || isSubmitting;
+  const isRefunding = refundStatus === "pending";
+
   return (
     <>
       <Link href="/" className="text-sm text-blue-600 hover:underline">
@@ -69,8 +116,7 @@ export const ProjectDetailClient = () => {
           <CardHeader>
             <CardTitle className="text-3xl">{data.title}</CardTitle>
             <p className="text-sm text-[rgb(var(--foreground))]/70">
-              Creado por{" "}
-              <span className="font-medium">{data.creator}</span>
+              Creado por <span className="font-medium">{data.creator}</span>
             </p>
           </CardHeader>
           <CardContent className="flex flex-col gap-6">
@@ -98,21 +144,85 @@ export const ProjectDetailClient = () => {
         </Card>
 
         <aside className="flex flex-col gap-4">
-          <div className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-[rgb(var(--foreground))]">
-              Aportar al proyecto
-            </h2>
-            <p className="mt-2 text-sm text-[rgb(var(--foreground))]/70">
-              La interacción de aporte se habilitará cuando finalicemos la integración de escritura
-              mediante `useFairFundContract` y el ABI real sincronizado.
-            </p>
-            <Button className="mt-4" disabled>
-              Aportar (próximamente)
-            </Button>
-          </div>
-          <div className="rounded-xl border border-dashed border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-6 text-sm text-[rgb(var(--foreground))]/60">
-            Token ERC20: <span className="font-mono text-xs">{data.tokenAddress}</span>
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Aportar al proyecto</CardTitle>
+              <p className="text-sm text-[rgb(var(--foreground))]/70">
+                Necesitas aprobar el gasto del token y luego confirmar el aporte.
+              </p>
+            </CardHeader>
+            <CardContent>
+              {!isWalletConnected && (
+                <div className="mb-4 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--surface-muted))] p-3 text-xs text-[rgb(var(--foreground))]/70">
+                  Conecta tu wallet para aportar.
+                </div>
+              )}
+
+              <form onSubmit={onContribute} className="flex flex-col gap-4">
+                <div className={fieldClasses}>
+                  <label htmlFor="amount">Monto</label>
+                  <input
+                    id="amount"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="100"
+                    disabled={!isWalletConnected || isFunding}
+                    className={inputClasses}
+                    {...register("amount")}
+                  />
+                  {errors.amount && (
+                    <span className="text-xs text-red-500">{errors.amount.message}</span>
+                  )}
+                </div>
+                <Button
+                  type="submit"
+                  disabled={!isWalletConnected || isFunding}
+                  isLoading={isFunding}
+                >
+                  {isFunding ? "Procesando..." : "Aportar"}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Solicitar reembolso</CardTitle>
+              <p className="text-sm text-[rgb(var(--foreground))]/70">
+                Disponible cuando la campaña falla o es cancelada.
+              </p>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-3">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  void refund();
+                }}
+                disabled={!isWalletConnected || isRefunding}
+                isLoading={isRefunding}
+              >
+                {isRefunding ? "Procesando..." : "Solicitar reembolso"}
+              </Button>
+              <div className="rounded-lg border border-dashed border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-3 text-xs text-[rgb(var(--foreground))]/70">
+                Token ERC20: <span className="font-mono">{data.tokenAddress}</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          {message && (
+            <div
+              className={`rounded-lg border p-4 text-sm ${
+                fundStatus === "success" || refundStatus === "success"
+                  ? "border-green-200 bg-green-50 text-green-700"
+                  : fundStatus === "error" || refundStatus === "error"
+                  ? "border-red-200 bg-red-50 text-red-700"
+                  : "border-[rgb(var(--border))] bg-[rgb(var(--surface-muted))] text-[rgb(var(--foreground))]"
+              }`}
+            >
+              {message}
+            </div>
+          )}
         </aside>
       </section>
     </>
@@ -129,4 +239,3 @@ const Detail = ({ label, value }: { label: string; value: string }) => (
     </p>
   </div>
 );
-
