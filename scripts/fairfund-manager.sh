@@ -29,6 +29,8 @@ ABI_TARGET_FILE="${ABI_TARGET_DIR}/FairFund.json"
 
 NEXT_ENV_FILE=${NEXT_ENV_FILE:-${ROOT_DIR}/web-fairfund/.env.local}
 SUPPORTED_TOKENS_JSON=${SUPPORTED_TOKENS_JSON:-${NEXT_PUBLIC_SUPPORTED_TOKENS:-}}
+ROOT_ENV_FILE=${ROOT_ENV_FILE:-${ROOT_DIR}/.env}
+CONFIG_ENV_FILE=${CONFIG_ENV_FILE:-${ROOT_DIR}/config/.env}
 
 # Utility --------------------------------------------------------------------
 
@@ -133,6 +135,22 @@ update_supported_tokens() {
     fi
 }
 
+load_env_file() {
+    local file="$1"
+    if [[ -f "${file}" ]]; then
+        log "Cargando variables desde ${file}"
+        # shellcheck disable=SC1090
+        set -a
+        source "${file}"
+        set +a
+    fi
+}
+
+load_env_files() {
+    load_env_file "${ROOT_ENV_FILE}"
+    load_env_file "${CONFIG_ENV_FILE}"
+}
+
 # Service management ---------------------------------------------------------
 
 restart_anvil() {
@@ -165,6 +183,9 @@ run_deploy() {
 
     local broadcast_flag=""
     [[ "${BROADCAST}" == "true" ]] && broadcast_flag="--broadcast"
+
+    ensure_dirs
+    mkdir -p "${ROOT_DIR}/tmp"
 
     (
         cd "${SMART_CONTRACT_DIR}" || exit 1
@@ -250,6 +271,8 @@ EOF
 }
 
 main() {
+    load_env_files
+
     local cmd="${1:-help}"
     shift || true
 
