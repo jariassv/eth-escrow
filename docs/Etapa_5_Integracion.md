@@ -17,6 +17,10 @@ Conectar el frontend `web-fairfund` con el contrato `FairFund.sol`, reemplazando
   - `/` consume `useProjects` (progress bar, mensajes de estado, skeletons).
   - `/project/[id]` renderiza `ProjectDetailClient` con estados de carga/errores.
   - `/dashboard` y `/create` verifican el estado de la wallet y muestran CTA de conexión.
+- **Formulario de creación**
+  - Integración con `react-hook-form` + `zod` para validar campos.
+  - Envío de transacción `createProject` (bloqueado hasta conectar wallet).
+  - Conversión automática de montos (`parseUnits`) y duración en segundos.
 
 ## 3. Requisitos de entorno
 
@@ -28,6 +32,11 @@ forge build
 ```
 
 Esto copia el ABI actualizado y registra `NEXT_PUBLIC_FAIRFUND_ADDRESS` en `web-fairfund/.env.local`. También se añadió `web-fairfund/.env.example` como plantilla.
+- Define los tokens permitidos en `NEXT_PUBLIC_SUPPORTED_TOKENS` (JSON). Ejemplo:
+
+```env
+NEXT_PUBLIC_SUPPORTED_TOKENS=[{"symbol":"DAI","address":"0x..."}]
+```
 
 ## 4. Flujo actual
 

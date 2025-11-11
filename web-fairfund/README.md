@@ -30,6 +30,19 @@ src/
 
 El ABI del contrato se espera en `lib/abi/FairFund.json` (placeholder vacío por ahora). El script `scripts/fairfund-manager.sh deploy-and-sync` del monorepo sobrescribirá este archivo y rellenará `.env.local`.
 
+#### Variables públicas
+
+- `NEXT_PUBLIC_RPC_URL`
+- `NEXT_PUBLIC_CHAIN_ID`
+- `NEXT_PUBLIC_FAIRFUND_ADDRESS`
+- `NEXT_PUBLIC_SUPPORTED_TOKENS` (JSON con `{ symbol, address }`)
+
+Ejemplo:
+
+```env
+NEXT_PUBLIC_SUPPORTED_TOKENS=[{"symbol":"DAI","address":"0x0000000000000000000000000000000000000000"}]
+```
+
 ### Flujo de conexión
 
 - `useWallet` gestiona la conexión con `window.ethereum`, almacena estado en Zustand y expone acciones `connect`/`disconnect`.
