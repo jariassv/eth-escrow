@@ -17,6 +17,8 @@ export const useFairFundContract = () => {
       return {
         contract: null,
         contractWithSigner: null,
+        runner: null,
+        readOnlyProvider: null,
         isConfigured: false,
       };
     }
@@ -27,16 +29,22 @@ export const useFairFundContract = () => {
       return {
         contract: null,
         contractWithSigner: null,
+        runner: null,
+        readOnlyProvider: null,
         isConfigured: false,
       };
     }
 
     const contract = createFairFundContract(runner as BrowserProvider | JsonRpcProvider);
     const contractWithSigner = signer ? contract.connect(signer) : null;
+    const readOnlyProvider =
+      runner instanceof BrowserProvider ? runner.provider : runner;
 
     return {
       contract,
       contractWithSigner,
+      runner,
+      readOnlyProvider,
       isConfigured: true,
     };
   }, [provider, signer]);

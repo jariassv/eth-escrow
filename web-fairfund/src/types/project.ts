@@ -5,18 +5,22 @@ export interface ProjectSummary {
   title: string;
   creator: string;
   description: string;
-  goal: string;
-  deadline: string;
+  tokenAddress: string;
   tokenSymbol: string;
-  raised: string;
-  backers: number;
+  goalDisplay: string;
+  raisedDisplay: string;
+  goalUnits: string;
+  raisedUnits: string;
+  progress: number;
+  deadline: Date;
+  deadlineLabel: string;
   status: ProjectStatus;
+  withdrawn: boolean;
+  cancelled: boolean;
+  pausedByCreator: boolean;
 }
 
-export interface Contribution {
-  projectId: number;
-  amount: string;
-  tokenSymbol: string;
-  timestamp: string;
+export interface ProjectDetail extends ProjectSummary {
+  totalRefundedDisplay: string;
+  totalRefundedUnits: string;
 }
-

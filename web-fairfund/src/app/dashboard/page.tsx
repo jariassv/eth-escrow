@@ -1,8 +1,25 @@
+"use client";
+
+import { useMemo } from "react";
 import Link from "next/link";
-import { mockContributions, mockProjects } from "@/lib/mocks/projects";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useWallet } from "@/hooks/useWallet";
+import { useProjects } from "@/hooks/useProjects";
 
 export default function DashboardPage() {
+  const { address, status, connect } = useWallet();
+  const { data } = useProjects();
+
+  const ownedProjects = useMemo(
+    () =>
+      (data ?? []).filter(
+        (project) =>
+          address &&
+          project.creator.toLowerCase() === address.toLowerCase()
+      ),
+    [data, address]
+  );
+
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 sm:py-14">
       <div className="mb-8 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -11,8 +28,7 @@ export default function DashboardPage() {
             Mi actividad
           </h1>
           <p className="mt-1 text-sm text-[rgb(var(--foreground))]/70">
-            Aquí verás tus campañas creadas y aportes cuando conectes tu wallet.
-            Mostramos algunos datos de ejemplo mientras se integra la lógica on-chain.
+            Visualiza las campañas que has creado y tus aportes una vez conectes tu wallet.
           </p>
         </div>
         <Link
@@ -23,59 +39,63 @@ export default function DashboardPage() {
         </Link>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Campañas creadas</CardTitle>
-            <p className="text-sm text-[rgb(var(--foreground))]/60">
-              Este listado se poblará con `fairFund.getProjects` filtrado por tu wallet.
-            </p>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            {mockProjects.slice(0, 1).map((project) => (
-              <div key={project.id} className="rounded-lg bg-[rgb(var(--surface-muted))] p-4">
-                <p className="text-sm font-semibold text-[rgb(var(--foreground))]">
-                  {project.title}
+      {status !== "connected" ? (
+        <div className="rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-6 text-sm text-[rgb(var(--foreground))]/70">
+          Conecta tu wallet para sincronizar tus campañas y aportes.
+          <button
+            onClick={() => {
+              void connect();
+            }}
+            className="mt-3 inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-500"
+          >
+            Conectar wallet
+          </button>
+        </div>
+      ) : (
+        <div className="grid gap-6 md:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Mis campañas</CardTitle>
+              <p className="text-sm text-[rgb(var(--foreground))]/60">
+                Se listan proyectos creados con la cuenta conectada.
+              </p>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-4">
+              {ownedProjects.length === 0 ? (
+                <p className="text-sm text-[rgb(var(--foreground))]/60">
+                  Aún no has creado campañas. Ve a <span className="font-medium text-blue-600">/create</span> para iniciar una.
                 </p>
-                <p className="text-xs text-[rgb(var(--foreground))]/60">
-                  Progreso: {project.raised} / {project.goal}
-                </p>
-              </div>
-            ))}
-            <p className="text-xs text-[rgb(var(--foreground))]/50">
-              Tip: usa el script `deploy-and-sync` para obtener el ABI actualizado y enlazarlo con
-              los hooks del frontend.
-            </p>
-          </CardContent>
-        </Card>
+              ) : (
+                ownedProjects.map((project) => (
+                  <div
+                    key={project.id}
+                    className="rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-4"
+                  >
+                    <p className="text-sm font-semibold text-[rgb(var(--foreground))]">
+                      {project.title}
+                    </p>
+                    <p className="text-xs text-[rgb(var(--foreground))]/60">
+                      Recaudado: {project.raisedDisplay} / {project.goalDisplay}
+                    </p>
+                  </div>
+                ))
+              )}
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Mis contribuciones</CardTitle>
-            <p className="text-sm text-[rgb(var(--foreground))]/60">
-              Datos de ejemplo hasta conectar con eventos reales del contrato.
-            </p>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-3">
-            {mockContributions.map((contribution, index) => (
-              <div
-                key={`${contribution.projectId}-${index}`}
-                className="rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-4"
-              >
-                <p className="text-sm font-medium text-[rgb(var(--foreground))]">
-                  Proyecto #{contribution.projectId} · {contribution.amount}
-                </p>
-                <p className="text-xs text-[rgb(var(--foreground))]/60">
-                  {new Date(contribution.timestamp).toLocaleString("es-ES", {
-                    dateStyle: "medium",
-                    timeStyle: "short",
-                  })}
-                </p>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Contribuciones</CardTitle>
+              <p className="text-sm text-[rgb(var(--foreground))]/60">
+                Próximamente integraremos el historial leyendo eventos del contrato.
+              </p>
+            </CardHeader>
+            <CardContent className="text-sm text-[rgb(var(--foreground))]/60">
+              Estamos preparando la consulta de `Contribution` para que puedas ver tus aportes y estados de reembolso.
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

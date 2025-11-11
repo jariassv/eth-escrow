@@ -9,7 +9,15 @@ const statusStyles: Record<ProjectSummary["status"], string> = {
   failed: "text-red-600 bg-red-600/10",
 };
 
+const statusLabel: Record<ProjectSummary["status"], string> = {
+  active: "Activa",
+  funded: "Financiada",
+  failed: "Finalizada",
+};
+
 export const ProjectCard = ({ project }: { project: ProjectSummary }) => {
+  const progressPercent = Math.round(project.progress * 100);
+
   return (
     <Card className="flex h-full flex-col gap-4">
       <CardHeader>
@@ -21,7 +29,7 @@ export const ProjectCard = ({ project }: { project: ProjectSummary }) => {
               statusStyles[project.status]
             )}
           >
-            {project.status === "active" ? "Activa" : project.status === "funded" ? "Financiada" : "Fallida"}
+            {statusLabel[project.status]}
           </span>
         </div>
         <p className="text-sm text-[rgb(var(--foreground))]/60">
@@ -29,25 +37,45 @@ export const ProjectCard = ({ project }: { project: ProjectSummary }) => {
         </p>
       </CardHeader>
       <CardContent className="flex flex-1 flex-col gap-4">
-        <p className="text-sm leading-relaxed text-[rgb(var(--foreground))]/80">
-          {project.description}
+        <p className="text-sm leading-relaxed text-[rgb(var(--foreground))]/80 line-clamp-3">
+          {project.description || "Sin descripción cargada."}
         </p>
-        <div className="grid grid-cols-2 gap-3 text-sm">
+        <div className="grid gap-3 text-sm md:grid-cols-2">
           <div>
             <p className="text-[rgb(var(--foreground))]/60">Meta</p>
-            <p className="font-semibold text-[rgb(var(--foreground))]">{project.goal}</p>
+            <p className="font-semibold text-[rgb(var(--foreground))]">
+              {project.goalDisplay}
+            </p>
           </div>
           <div>
             <p className="text-[rgb(var(--foreground))]/60">Recaudado</p>
-            <p className="font-semibold text-[rgb(var(--foreground))]">{project.raised}</p>
+            <p className="font-semibold text-[rgb(var(--foreground))]">
+              {project.raisedDisplay}
+            </p>
           </div>
           <div>
-            <p className="text-[rgb(var(--foreground))]/60">Aportantes</p>
-            <p className="font-semibold text-[rgb(var(--foreground))]">{project.backers}</p>
+            <p className="text-[rgb(var(--foreground))]/60">Token</p>
+            <p className="font-semibold text-[rgb(var(--foreground))]">
+              {project.tokenSymbol}
+            </p>
           </div>
           <div>
             <p className="text-[rgb(var(--foreground))]/60">Deadline</p>
-            <p className="font-semibold text-[rgb(var(--foreground))]">{project.deadline}</p>
+            <p className="font-semibold text-[rgb(var(--foreground))]">
+              {project.deadlineLabel}
+            </p>
+          </div>
+        </div>
+        <div>
+          <div className="flex items-center justify-between text-xs text-[rgb(var(--foreground))]/60">
+            <span>Progreso</span>
+            <span>{progressPercent}%</span>
+          </div>
+          <div className="mt-1 h-2 rounded-full bg-[rgb(var(--surface-muted))]">
+            <div
+              className={cn("h-full rounded-full bg-blue-500 transition-all")}
+              style={{ width: `${progressPercent}%` }}
+            />
           </div>
         </div>
         <div className="mt-auto">
