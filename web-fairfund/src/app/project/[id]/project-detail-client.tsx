@@ -40,7 +40,30 @@ export const ProjectDetailClient = () => {
   const params = useParams<{ id: string }>();
   const projectId = Number(params?.id ?? 0);
   const { data, isLoading, error } = useProject(projectId);
-  const { status } = useWallet();
+  const { status, address } = useWallet();
+
+  const projectTokenAddress = data?.tokenAddress ?? "0x0000000000000000000000000000000000000000";
+  const {
+    fund,
+    refund,
+    withdraw,
+    fundStatus,
+    refundStatus,
+    withdrawStatus,
+    message,
+  } = useProjectActions(projectId, projectTokenAddress);
+
+  const contributionForm = useForm<z.infer<typeof contributionSchema>>({
+    resolver: zodResolver(contributionSchema),
+    defaultValues: { amount: "" },
+  });
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = contributionForm;
 
   if (isLoading) {
     return (
@@ -79,31 +102,22 @@ export const ProjectDetailClient = () => {
     );
   }
 
-  const { fund, refund, fundStatus, refundStatus, message } = useProjectActions(
-    projectId,
-    data.tokenAddress
-  );
-
-  const contributionForm = useForm<z.infer<typeof contributionSchema>>({
-    resolver: zodResolver(contributionSchema),
-    defaultValues: { amount: "" },
-  });
-
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors, isSubmitting },
-  } = contributionForm;
-
   const onContribute = handleSubmit(async ({ amount }) => {
     await fund(amount);
     reset({ amount: "" });
   });
 
   const isWalletConnected = status === "connected";
+  const isCreator =
+    isWalletConnected &&
+    address &&
+    data.creator.toLowerCase() === address.toLowerCase();
+
   const isFunding = fundStatus === "pending" || isSubmitting;
   const isRefunding = refundStatus === "pending";
+  const isWithdrawing = withdrawStatus === "pending";
+  const canWithdraw =
+    isCreator && data.status === "funded" && !data.withdrawn;
 
   return (
     <>
@@ -210,12 +224,41 @@ export const ProjectDetailClient = () => {
             </CardContent>
           </Card>
 
+          <Card>
+            <CardHeader>
+              <CardTitle>Retirar fondos</CardTitle>
+              <p className="text-sm text-[rgb(var(--foreground))]/70">
+                Sólo disponible para el creador cuando la campaña fue financiada y aún no retiró.
+              </p>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-3">
+              <Button
+                onClick={() => {
+                  void withdraw();
+                }}
+                disabled={!canWithdraw || isWithdrawing}
+                isLoading={isWithdrawing}
+              >
+                {isWithdrawing ? "Procesando..." : "Retirar fondos"}
+              </Button>
+              {!canWithdraw && (
+                <span className="text-xs text-[rgb(var(--foreground))]/60">
+                  Debes ser el creador y la campaña debe estar financiada.
+                </span>
+              )}
+            </CardContent>
+          </Card>
+
           {message && (
             <div
               className={`rounded-lg border p-4 text-sm ${
-                fundStatus === "success" || refundStatus === "success"
+                fundStatus === "success" ||
+                refundStatus === "success" ||
+                withdrawStatus === "success"
                   ? "border-green-200 bg-green-50 text-green-700"
-                  : fundStatus === "error" || refundStatus === "error"
+                  : fundStatus === "error" ||
+                    refundStatus === "error" ||
+                    withdrawStatus === "error"
                   ? "border-red-200 bg-red-50 text-red-700"
                   : "border-[rgb(var(--border))] bg-[rgb(var(--surface-muted))] text-[rgb(var(--foreground))]"
               }`}

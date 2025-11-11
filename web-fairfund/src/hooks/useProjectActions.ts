@@ -24,12 +24,13 @@ export const useProjectActions = (projectId: number, tokenAddress: string) => {
   const { contractWithSigner, readOnlyProvider } = useFairFundContract();
   const [fundStatus, setFundStatus] = useState<ActionStatus>("idle");
   const [refundStatus, setRefundStatus] = useState<ActionStatus>("idle");
+  const [withdrawStatus, setWithdrawStatus] = useState<ActionStatus>("idle");
   const [message, setMessage] = useState<string | null>(null);
 
-  const runInvalidate = () => {
+  const runInvalidate = useCallback(() => {
     void queryClient.invalidateQueries({ queryKey: ["fairfund-projects"] });
     void queryClient.invalidateQueries({ queryKey: ["fairfund-project", projectId] });
-  };
+  }, [queryClient, projectId]);
 
   const fund = useCallback(
     async (amountInput: string) => {
@@ -88,7 +89,7 @@ export const useProjectActions = (projectId: number, tokenAddress: string) => {
         setMessage(message);
       }
     },
-    [contractWithSigner, address, tokenAddress, readOnlyProvider, projectId]
+    [contractWithSigner, address, projectId, tokenAddress, readOnlyProvider, runInvalidate]
   );
 
   const refund = useCallback(async () => {
@@ -113,13 +114,39 @@ export const useProjectActions = (projectId: number, tokenAddress: string) => {
       setRefundStatus("error");
       setMessage(message);
     }
-  }, [contractWithSigner, projectId]);
+  }, [contractWithSigner, projectId, runInvalidate]);
+
+  const withdraw = useCallback(async () => {
+    if (!contractWithSigner) {
+      setWithdrawStatus("error");
+      setMessage("Conecta tu wallet para retirar fondos.");
+      return;
+    }
+
+    try {
+      setWithdrawStatus("pending");
+      setMessage(null);
+      const tx = await contractWithSigner.withdrawFunds(projectId);
+      await tx.wait();
+      setWithdrawStatus("success");
+      setMessage("Fondos retirados correctamente.");
+      runInvalidate();
+    } catch (error) {
+      console.error("[withdraw]", error);
+      const message =
+        error instanceof Error ? error.message : "No se pudo completar el retiro.";
+      setWithdrawStatus("error");
+      setMessage(message);
+    }
+  }, [contractWithSigner, projectId, runInvalidate]);
 
   return {
     fund,
     refund,
+    withdraw,
     fundStatus,
     refundStatus,
+    withdrawStatus,
     message,
   };
 };
