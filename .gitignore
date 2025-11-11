@@ -1,0 +1,36 @@
+# Node & JavaScript
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+package-lock.json
+
+# Next.js
+.next/
+out/
+.vercel/
+
+# Env files
+.env
+.env.*
+!.env.example
+.env.local
+
+# Foundry
+cache/
+out/
+lib/
+
+# OS / Editor
+.DS_Store
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# Coverage & Logs
+coverage/
+logs/
+
+
