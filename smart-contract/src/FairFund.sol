@@ -73,9 +73,7 @@ contract FairFund is Ownable, ReentrancyGuard, Pausable {
     event TokenAllowed(address indexed token, uint16 feeBpsOverride);
     event TokenRemoved(address indexed token);
     event PlatformFeeUpdated(uint16 newFee);
-    event ProjectCreated(
-        uint256 indexed id, address indexed creator, address indexed token, uint256 goal, uint256 deadline
-    );
+    event ProjectCreated(uint256 indexed id, address indexed creator, address indexed token, uint256 goal, uint256 deadline);
     event ProjectCancelled(uint256 indexed id);
     event ProjectPaused(uint256 indexed id);
     event ProjectResumed(uint256 indexed id);
@@ -219,12 +217,7 @@ contract FairFund is Ownable, ReentrancyGuard, Pausable {
 
     // -------- Funding logic --------
 
-    function fundProject(uint256 projectId, uint256 amount)
-        external
-        nonReentrant
-        whenNotPaused
-        projectExists(projectId)
-    {
+    function fundProject(uint256 projectId, uint256 amount) external nonReentrant whenNotPaused projectExists(projectId) {
         if (amount == 0) {
             revert ContributionZero();
         }
@@ -264,10 +257,7 @@ contract FairFund is Ownable, ReentrancyGuard, Pausable {
         if (project.totalRaised < project.goal) {
             revert GoalNotReached(project.totalRaised, project.goal);
         }
-        if (block.timestamp < project.deadline) {
-            // ensure goal reached before deadline, but allow early withdrawal if goal reached
-            // no revert; allow withdraw as soon as goal reached
-        }
+        // Nota: se permite retiro inmediato una vez alcanzada la meta, incluso antes del deadline.
 
         uint256 available = project.totalRaised - project.totalRefunded;
         if (available == 0) {
@@ -378,3 +368,5 @@ contract FairFund is Ownable, ReentrancyGuard, Pausable {
         return available - feeAmount;
     }
 }
+
+

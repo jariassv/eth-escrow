@@ -10,6 +10,7 @@ Implementar el contrato inteligente `FairFund.sol`, su batería inicial de prueb
   - Gestión de campañas con soporte para múltiples tokens ERC20 autorizados.
   - Control de comisiones (`platformFeeBps` con override por token) y envío automático al `feeVault`.
   - Ciclo completo de campaña: creación, pausa/reactivación por el creador, cancelación, aportes, retiro y reembolsos.
+  - Reembolsos protegidos contra reentrancy siguiendo el patrón *checks-effects-interactions* antes de transferir tokens.
   - Salvaguardas: `Pausable`, `ReentrancyGuard`, validación de deadlines, montos y estados.
   - Eventos exhaustivos para indexación (`ProjectCreated`, `ContributionAdded`, `FundsWithdrawn`, etc.).
   - Capa de lectura optimizada (`getProject`, `getProjects`, `computeClaimable`, `getContribution`).
@@ -43,6 +44,7 @@ Implementar el contrato inteligente `FairFund.sol`, su batería inicial de prueb
 - Agregar pruebas de fuzzing y escenarios multi-backers simultáneos.
 - Definir política exacta de `duration` mínima/máxima en documentación funcional.
 - Preparar fixtures de datos y seeds para etapa de automatización (scripts Etapa 3).
+- Documentar explícitamente que, una vez alcanzada la meta, el creador puede retirar fondos incluso antes del deadline (comportamiento esperado del MVP).
 
 ---
 
