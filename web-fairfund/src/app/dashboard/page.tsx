@@ -5,10 +5,17 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useWallet } from "@/hooks/useWallet";
 import { useProjects } from "@/hooks/useProjects";
+import { useWalletBalances } from "@/hooks/useWalletBalances";
+import { env } from "@/lib/env";
 
 export default function DashboardPage() {
   const { address, status, connect } = useWallet();
   const { data: projects } = useProjects();
+  const {
+    data: balances = [],
+    isLoading: balancesLoading,
+    error: balancesError,
+  } = useWalletBalances(address);
 
   const ownedProjects = useMemo(
     () =>
@@ -63,6 +70,60 @@ export default function DashboardPage() {
         </div>
       ) : (
         <div className="grid gap-6 md:grid-cols-2">
+          <Card className="md:col-span-2">
+            <CardHeader>
+              <CardTitle>Wallet conectada</CardTitle>
+              <p className="text-sm text-[rgb(var(--foreground))]/60">
+                Saldos disponibles para los tokens permitidos en FairFund.
+              </p>
+            </CardHeader>
+            <CardContent>
+              {env.supportedTokens.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-4 text-sm text-[rgb(var(--foreground))]/70">
+                  Configura tokens en <code>NEXT_PUBLIC_SUPPORTED_TOKENS</code> para visualizar saldos.
+                </div>
+              ) : balancesLoading ? (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {Array.from({ length: env.supportedTokens.length || 2 }).map((_, index) => (
+                    <div
+                      key={index}
+                      className="h-20 animate-pulse rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--surface))]"
+                    />
+                  ))}
+                </div>
+              ) : balancesError ? (
+                <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                  Error al consultar los saldos de la wallet. {(balancesError as Error).message}
+                </div>
+              ) : balances.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-4 text-sm text-[rgb(var(--foreground))]/70">
+                  No se detectaron balances para los tokens configurados.
+                </div>
+              ) : (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {balances.map((token) => (
+                    <div
+                      key={token.address}
+                      className="rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-4"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-semibold text-[rgb(var(--foreground))]">
+                          {token.symbol}
+                        </span>
+                        <span className="font-mono text-sm text-[rgb(var(--foreground))]">
+                          {token.formatted}
+                        </span>
+                      </div>
+                      <p className="mt-2 text-xs text-[rgb(var(--foreground))]/60">
+                        Token: {token.address.slice(0, 6)}…{token.address.slice(-4)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle>Resumen de campañas</CardTitle>

@@ -20,7 +20,7 @@ contract FairFundTest is Test {
 
     function setUp() external {
         fairFund = new FairFund(owner, feeVault, uint16(PLATFORM_FEE_BPS));
-        token = new MockERC20("Mock Token", "MOCK");
+        token = new MockERC20("Mock Token", "MOCK", 18);
 
         token.mint(backer, 10_000 ether);
         token.mint(creator, 10_000 ether);
