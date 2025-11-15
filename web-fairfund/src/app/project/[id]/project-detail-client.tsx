@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { useProject } from "@/hooks/useProjects";
 import { useWallet } from "@/hooks/useWallet";
 import { useProjectActions } from "@/hooks/useProjectActions";
+import { useUserContribution } from "@/hooks/useUserContribution";
 import { cn } from "@/lib/utils";
 
 const DetailSkeleton = () => (
@@ -53,6 +54,7 @@ export const ProjectDetailClient = () => {
     withdrawStatus,
     message,
   } = useProjectActions(projectId, projectTokenAddress);
+  const { data: userContribution } = useUserContribution(projectId, address);
 
   const contributionForm = useForm<z.infer<typeof contributionSchema>>({
     resolver: zodResolver(contributionSchema),
@@ -117,8 +119,28 @@ export const ProjectDetailClient = () => {
   const isFunding = fundStatus === "pending" || isSubmitting;
   const isRefunding = refundStatus === "pending";
   const isWithdrawing = withdrawStatus === "pending";
+  
+  // Validación para retirar fondos: solo el creador cuando la campaña está financiada y no ha retirado
   const canWithdraw =
-    isCreator && data.status === "funded" && !data.withdrawn;
+    isWalletConnected &&
+    isCreator &&
+    data.status === "funded" &&
+    !data.withdrawn;
+
+  // Validación para solicitar reembolso:
+  // - Usuario debe tener wallet conectada
+  // - Debe haber contribuido (amount > 0)
+  // - No debe haber reembolsado todo (refunded < amount)
+  // - La campaña debe estar fallida (failed) o cancelada
+  const hasContributed = userContribution?.amount ? userContribution.amount > 0n : false;
+  const hasRefundedAll = userContribution
+    ? userContribution.refunded >= userContribution.amount
+    : false;
+  const canRefund =
+    isWalletConnected &&
+    hasContributed &&
+    !hasRefundedAll &&
+    (data.status === "failed" || data.cancelled);
 
   return (
     <>
@@ -186,12 +208,25 @@ export const ProjectDetailClient = () => {
                   onClick={() => {
                     void refund();
                   }}
-                  disabled={!isWalletConnected || isRefunding}
+                  disabled={!canRefund || isRefunding}
                   isLoading={isRefunding}
                   className="w-full border-white/40 text-[rgb(var(--foreground))] hover:border-white/60 hover:bg-white/50 dark:border-white/15 dark:hover:bg-white/10"
                 >
                   {isRefunding ? "Procesando..." : "Solicitar reembolso"}
                 </Button>
+                {!canRefund && (
+                  <div className="rounded-lg border border-dashed border-white/35 bg-white/50 p-2 text-xs text-[rgb(var(--foreground))]/70 dark:border-white/15 dark:bg-white/5">
+                    {!isWalletConnected
+                      ? "Conecta tu wallet para solicitar reembolso."
+                      : !hasContributed
+                      ? "No has contribuido a este proyecto."
+                      : hasRefundedAll
+                      ? "Ya has reembolsado tu contribución completa."
+                      : data.status !== "failed" && !data.cancelled
+                      ? "El reembolso solo está disponible cuando la campaña falla o es cancelada."
+                      : "No puedes solicitar reembolso en este momento."}
+                  </div>
+                )}
                 <div className="rounded-lg border border-dashed border-white/35 bg-white/50 p-2 text-xs text-[rgb(var(--foreground))]/70 dark:border-white/15 dark:bg-white/5">
                   Token ERC20:
                   <br />
@@ -216,9 +251,17 @@ export const ProjectDetailClient = () => {
                   {isWithdrawing ? "Procesando..." : "Retirar fondos"}
                 </Button>
                 {!canWithdraw && (
-                  <span className="text-xs text-[rgb(var(--foreground))]/60">
-                    Debes ser el creador y la campaña debe estar financiada.
-                  </span>
+                  <div className="rounded-lg border border-dashed border-white/35 bg-white/50 p-2 text-xs text-[rgb(var(--foreground))]/70 dark:border-white/15 dark:bg-white/5">
+                    {!isWalletConnected
+                      ? "Conecta tu wallet para retirar fondos."
+                      : !isCreator
+                      ? "Solo el creador del proyecto puede retirar fondos."
+                      : data.status !== "funded"
+                      ? "La campaña debe estar financiada para retirar fondos."
+                      : data.withdrawn
+                      ? "Los fondos ya han sido retirados."
+                      : "No puedes retirar fondos en este momento."}
+                  </div>
                 )}
               </div>
             </ActionCard>

@@ -6,6 +6,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { parseUnits } from "ethers";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { useWallet } from "@/hooks/useWallet";
@@ -50,6 +52,7 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 export default function CreateProjectPage() {
+  const router = useRouter();
   const { status, connect } = useWallet();
   const { contractWithSigner, readOnlyProvider } = useFairFundContract();
   const supportedTokens = env.supportedTokens;
@@ -85,6 +88,9 @@ export default function CreateProjectPage() {
     if (!contractWithSigner) {
       setTxStatus("error");
       setTxError("Conecta tu wallet para firmar la transacción.");
+      toast.error("Wallet no conectada", {
+        description: "Conecta tu wallet para crear un proyecto.",
+      });
       return;
     }
 
@@ -95,6 +101,9 @@ export default function CreateProjectPage() {
     if (!tokenConfig) {
       setTxStatus("error");
       setTxError("El token seleccionado no está configurado en el entorno.");
+      toast.error("Token no válido", {
+        description: "El token seleccionado no está configurado en el entorno.",
+      });
       return;
     }
 
@@ -102,6 +111,9 @@ export default function CreateProjectPage() {
       setTxStatus("pending");
       setTxError(null);
       setTxHash(null);
+      const loadingToast = toast.loading("Creando proyecto...", {
+        description: "Preparando la transacción",
+      });
 
       const metadata = await getTokenMetadata(
         tokenConfig.address,
@@ -120,9 +132,17 @@ export default function CreateProjectPage() {
       );
 
       setTxHash(tx.hash);
+      toast.loading("Transacción enviada", {
+        id: loadingToast,
+        description: `Esperando confirmación... Hash: ${tx.hash.slice(0, 10)}...`,
+      });
       await tx.wait();
 
       setTxStatus("success");
+      toast.success("Proyecto creado exitosamente", {
+        id: loadingToast,
+        description: `"${values.title}" ha sido publicado correctamente.`,
+      });
       reset({
         title: "",
         description: "",
@@ -131,12 +151,20 @@ export default function CreateProjectPage() {
         durationDays: 30,
         documentationUrl: "",
       });
+      
+      // Redirigir al listado después de un breve delay
+      setTimeout(() => {
+        router.push("/");
+      }, 2000);
     } catch (error) {
       console.error("[create-project]", error);
-      const message =
+      const errorMessage =
         error instanceof Error ? error.message : "No se pudo crear la campaña";
       setTxStatus("error");
-      setTxError(message);
+      setTxError(errorMessage);
+      toast.error("Error al crear el proyecto", {
+        description: errorMessage,
+      });
     }
   });
 
