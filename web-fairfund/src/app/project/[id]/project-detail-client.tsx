@@ -7,18 +7,19 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useProject } from "@/hooks/useProjects";
 import { useWallet } from "@/hooks/useWallet";
 import { useProjectActions } from "@/hooks/useProjectActions";
+import { cn } from "@/lib/utils";
 
 const DetailSkeleton = () => (
-  <div className="mt-6 grid gap-6 md:grid-cols-[2fr,1fr]">
-    <div className="h-[360px] animate-pulse rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))]" />
-    <div className="flex flex-col gap-4">
-      <div className="h-[180px] animate-pulse rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))]" />
-      <div className="h-[140px] animate-pulse rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))]" />
+  <div className="mt-8 flex flex-col-reverse gap-4 md:flex-row md:items-start">
+    <div className="flex flex-col gap-3 md:w-[320px]">
+      <div className="h-32 animate-pulse rounded-xl border border-white/25 bg-white/60 backdrop-blur-md dark:border-white/10 dark:bg-white/10" />
+      <div className="h-32 animate-pulse rounded-xl border border-white/25 bg-white/60 backdrop-blur-md dark:border-white/10 dark:bg-white/10" />
+      <div className="h-28 animate-pulse rounded-xl border border-white/25 bg-white/60 backdrop-blur-md dark:border-white/10 dark:bg-white/10" />
     </div>
+    <div className="h-[360px] flex-1 animate-pulse rounded-xl border border-white/25 bg-white/65 backdrop-blur-md dark:border-white/10 dark:bg-white/10" />
   </div>
 );
 
@@ -34,7 +35,7 @@ const contributionSchema = z.object({
 const fieldClasses =
   "flex flex-col gap-2 text-sm text-[rgb(var(--foreground))]/80";
 const inputClasses =
-  "w-full rounded-md border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[rgb(var(--primary))]";
+  "w-full rounded-xl border border-white/50 bg-white/70 px-3 py-2 text-sm text-[rgb(var(--foreground))] shadow-inner shadow-[rgba(15,23,42,0.05)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[rgb(var(--primary))] dark:border-white/10 dark:bg-white/10";
 
 export const ProjectDetailClient = () => {
   const params = useParams<{ id: string }>();
@@ -121,60 +122,35 @@ export const ProjectDetailClient = () => {
 
   return (
     <>
-      <Link href="/" className="text-sm text-blue-600 hover:underline">
+      <Link
+        href="/"
+        className="inline-flex items-center text-sm font-semibold text-[rgb(var(--primary))] transition hover:text-[rgb(var(--accent))]"
+      >
         ← Volver al listado
       </Link>
 
-      <section className="mt-6 grid gap-6 md:grid-cols-[2fr,1fr]">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-3xl">{data.title}</CardTitle>
-            <p className="text-sm text-[rgb(var(--foreground))]/70">
-              Creado por <span className="font-medium">{data.creator}</span>
-            </p>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-6">
-            <p className="text-sm leading-relaxed text-[rgb(var(--foreground))]/80">
-              {data.description || "Sin descripción detallada registrada."}
-            </p>
-            <div className="grid gap-4 md:grid-cols-2">
-              <Detail label="Meta" value={data.goalDisplay} />
-              <Detail label="Recaudado" value={data.raisedDisplay} />
-              <Detail label="Total reembolsado" value={data.totalRefundedDisplay} />
-              <Detail label="Token" value={data.tokenSymbol} />
-              <Detail label="Deadline" value={data.deadlineLabel} />
-              <Detail
-                label="Estado"
-                value={
-                  data.status === "active"
-                    ? "Activa"
-                    : data.status === "funded"
-                    ? "Financiada"
-                    : "Finalizada"
-                }
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        <aside className="flex flex-col gap-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Aportar al proyecto</CardTitle>
-              <p className="text-sm text-[rgb(var(--foreground))]/70">
-                Necesitas aprobar el gasto del token y luego confirmar el aporte.
-              </p>
-            </CardHeader>
-            <CardContent>
-              {!isWalletConnected && (
-                <div className="mb-4 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--surface-muted))] p-3 text-xs text-[rgb(var(--foreground))]/70">
-                  Conecta tu wallet para aportar.
-                </div>
-              )}
-
-              <form onSubmit={onContribute} className="flex flex-col gap-4">
+      <section className="relative mt-8 space-y-5">
+        <div className="flex flex-col-reverse gap-5 md:flex-row md:items-start">
+          <aside className="flex flex-col gap-3 md:w-[320px] md:sticky md:top-24">
+            <ActionCard
+              title="Aportar al proyecto"
+              description="Aprueba y firma tu transacción para apoyar la campaña con el token seleccionado."
+              footer={
+                !isWalletConnected && (
+                  <div className="mb-3 rounded-lg border border-dashed border-white/35 bg-white/50 p-2 text-xs text-[rgb(var(--foreground))]/70 dark:border-white/15 dark:bg-white/10">
+                    Conecta tu wallet para poder aportar.
+                  </div>
+                )
+              }
+            >
+              <form onSubmit={onContribute} className="flex flex-col gap-3">
                 <div className={fieldClasses}>
-                  <label htmlFor="amount">Monto</label>
+                  <label
+                    htmlFor="amount"
+                    className="text-[11px] font-medium uppercase tracking-wide text-[rgb(var(--foreground))]/50"
+                  >
+                    Monto a aportar
+                  </label>
                   <input
                     id="amount"
                     type="number"
@@ -193,92 +169,186 @@ export const ProjectDetailClient = () => {
                   type="submit"
                   disabled={!isWalletConnected || isFunding}
                   isLoading={isFunding}
+                  className="w-full"
                 >
-                  {isFunding ? "Procesando..." : "Aportar"}
+                  {isFunding ? "Procesando..." : "Aportar ahora"}
                 </Button>
               </form>
-            </CardContent>
-          </Card>
+            </ActionCard>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Solicitar reembolso</CardTitle>
-              <p className="text-sm text-[rgb(var(--foreground))]/70">
-                Disponible cuando la campaña falla o es cancelada.
-              </p>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-3">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  void refund();
-                }}
-                disabled={!isWalletConnected || isRefunding}
-                isLoading={isRefunding}
-              >
-                {isRefunding ? "Procesando..." : "Solicitar reembolso"}
-              </Button>
-              <div className="rounded-lg border border-dashed border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-3 text-xs text-[rgb(var(--foreground))]/70">
-                Token ERC20: <span className="font-mono">{data.tokenAddress}</span>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Retirar fondos</CardTitle>
-              <p className="text-sm text-[rgb(var(--foreground))]/70">
-                Sólo disponible para el creador cuando la campaña fue financiada y aún no retiró.
-              </p>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-3">
-              <Button
-                onClick={() => {
-                  void withdraw();
-                }}
-                disabled={!canWithdraw || isWithdrawing}
-                isLoading={isWithdrawing}
-              >
-                {isWithdrawing ? "Procesando..." : "Retirar fondos"}
-              </Button>
-              {!canWithdraw && (
-                <span className="text-xs text-[rgb(var(--foreground))]/60">
-                  Debes ser el creador y la campaña debe estar financiada.
-                </span>
-              )}
-            </CardContent>
-          </Card>
-
-          {message && (
-            <div
-              className={`rounded-lg border p-4 text-sm ${
-                fundStatus === "success" ||
-                refundStatus === "success" ||
-                withdrawStatus === "success"
-                  ? "border-green-200 bg-green-50 text-green-700"
-                  : fundStatus === "error" ||
-                    refundStatus === "error" ||
-                    withdrawStatus === "error"
-                  ? "border-red-200 bg-red-50 text-red-700"
-                  : "border-[rgb(var(--border))] bg-[rgb(var(--surface-muted))] text-[rgb(var(--foreground))]"
-              }`}
+            <ActionCard
+              title="Solicitar reembolso"
+              description="Disponible cuando la campaña no alcance la meta o sea cancelada por su creador."
             >
-              {message}
+              <div className="flex flex-col gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    void refund();
+                  }}
+                  disabled={!isWalletConnected || isRefunding}
+                  isLoading={isRefunding}
+                  className="w-full border-white/40 text-[rgb(var(--foreground))] hover:border-white/60 hover:bg-white/50 dark:border-white/15 dark:hover:bg-white/10"
+                >
+                  {isRefunding ? "Procesando..." : "Solicitar reembolso"}
+                </Button>
+                <div className="rounded-lg border border-dashed border-white/35 bg-white/50 p-2 text-xs text-[rgb(var(--foreground))]/70 dark:border-white/15 dark:bg-white/5">
+                  Token ERC20:
+                  <br />
+                  <span className="font-mono text-[11px]">{data.tokenAddress}</span>
+                </div>
+              </div>
+            </ActionCard>
+
+            <ActionCard
+              title="Retirar fondos"
+              description="Disponible sólo para el creador cuando la campaña alcanzó la meta y aún no retiró."
+            >
+              <div className="flex flex-col gap-3">
+                <Button
+                  onClick={() => {
+                    void withdraw();
+                  }}
+                  disabled={!canWithdraw || isWithdrawing}
+                  isLoading={isWithdrawing}
+                  className="w-full"
+                >
+                  {isWithdrawing ? "Procesando..." : "Retirar fondos"}
+                </Button>
+                {!canWithdraw && (
+                  <span className="text-xs text-[rgb(var(--foreground))]/60">
+                    Debes ser el creador y la campaña debe estar financiada.
+                  </span>
+                )}
+              </div>
+            </ActionCard>
+
+            {message && (
+              <div
+                className={cn(
+                  "rounded-lg border p-3 text-sm shadow-lg backdrop-blur-md",
+                  fundStatus === "success" ||
+                    refundStatus === "success" ||
+                    withdrawStatus === "success"
+                    ? "border-emerald-200 bg-emerald-100/70 text-emerald-700"
+                    : fundStatus === "error" ||
+                      refundStatus === "error" ||
+                      withdrawStatus === "error"
+                    ? "border-rose-200 bg-rose-100/70 text-rose-700"
+                    : "border-white/30 bg-white/60 text-[rgb(var(--foreground))]/80 dark:border-white/10 dark:bg-white/10"
+                )}
+              >
+                {message}
+              </div>
+            )}
+          </aside>
+
+          <article className="relative flex-1 rounded-2xl border border-white/25 bg-white/75 p-6 shadow-[0_20px_60px_-40px_rgba(59,130,246,0.45)] backdrop-blur-xl dark:border-white/10 dark:bg-white/10">
+            <span
+              className={cn(
+                "absolute -top-4 right-6 inline-flex items-center gap-2 rounded-full border border-white/50 bg-white/70 px-3 py-1 text-xs font-semibold uppercase tracking-wide shadow-sm dark:border-white/10 dark:bg-white/15",
+                {
+                  "text-emerald-600": data.status === "funded",
+                  "text-blue-600": data.status === "active",
+                  "text-rose-600": data.status === "failed",
+                }
+              )}
+            >
+              <span
+                className={cn(
+                  "h-2 w-2 rounded-full",
+                  data.status === "funded"
+                    ? "bg-emerald-500"
+                    : data.status === "active"
+                    ? "bg-blue-500"
+                    : "bg-rose-500"
+                )}
+              />
+              {data.status === "active"
+                ? "Activa"
+                : data.status === "funded"
+                ? "Financiada"
+                : "Finalizada"}
+            </span>
+            <div className="flex flex-col gap-5">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="space-y-3">
+                  <span className="inline-flex items-center gap-2 rounded-full border border-white/40 bg-white/60 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-[rgb(var(--foreground))]/60 dark:border-white/10 dark:bg-white/10">
+                    Campaña #{projectId}
+                  </span>
+                  <h1 className="text-2xl font-semibold text-[rgb(var(--foreground))] sm:text-[28px]">
+                    {data.title}
+                  </h1>
+                  <p className="text-sm text-[rgb(var(--foreground))]/60">
+                    Creada por <span className="font-medium text-[rgb(var(--foreground))]">{data.creator}</span>
+                  </p>
+                </div>
+              </div>
+
+              <p className="max-w-3xl text-sm leading-relaxed text-[rgb(var(--foreground))]/75 line-clamp-6">
+                {data.description || "Sin descripción detallada registrada para esta campaña."}
+              </p>
+
+              <div className="grid gap-3 rounded-xl border border-white/35 bg-white/65 p-4 shadow-inner shadow-[rgba(15,23,42,0.02)] backdrop-blur-lg dark:border-white/10 dark:bg-white/5 sm:grid-cols-2">
+                <Detail label="Meta" value={data.goalDisplay} />
+                <Detail label="Recaudado" value={data.raisedDisplay} />
+                <Detail label="Total reembolsado" value={data.totalRefundedDisplay} />
+                <Detail label="Token" value={data.tokenSymbol} />
+                <Detail label="Deadline" value={data.deadlineLabel} />
+                <Detail label="Dirección token" value={`${data.tokenAddress.slice(0, 10)}…${data.tokenAddress.slice(-6)}`} />
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs text-[rgb(var(--foreground))]/60">
+                  <span>Progreso de la campaña</span>
+                  <span>
+                    {Math.min(100, Math.round(data.progress * 100))}
+                    %
+                  </span>
+                </div>
+                <div className="relative h-3 overflow-hidden rounded-full bg-[rgba(148,163,184,0.2)]">
+                  <div
+                    className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-emerald-400 via-emerald-500 to-emerald-600 transition-all"
+                    style={{ width: `${Math.min(100, Math.round(data.progress * 100))}%` }}
+                  />
+                </div>
+              </div>
             </div>
-          )}
-        </aside>
+          </article>
+        </div>
       </section>
     </>
   );
 };
 
 const Detail = ({ label, value }: { label: string; value: string }) => (
-  <div className="rounded-lg bg-[rgb(var(--surface-muted))] p-4">
-    <p className="text-xs uppercase tracking-wide text-[rgb(var(--foreground))]/50">
+  <div className="rounded-lg bg-white/70 p-3 shadow-inner shadow-[rgba(15,23,42,0.02)] dark:bg-white/5">
+    <p className="text-[10px] uppercase tracking-wide text-[rgb(var(--foreground))]/45">
       {label}
     </p>
     <p className="mt-1 text-sm font-semibold text-[rgb(var(--foreground))]">
       {value}
     </p>
+  </div>
+);
+
+const ActionCard = ({
+  title,
+  description,
+  footer,
+  children,
+}: {
+  title: string;
+  description: string;
+  footer?: React.ReactNode;
+  children: React.ReactNode;
+}) => (
+  <div className="rounded-xl border border-white/25 bg-white/70 p-4 shadow-lg shadow-[rgba(15,23,42,0.08)] backdrop-blur-md dark:border-white/10 dark:bg-white/10">
+    <div className="mb-3 space-y-1.5">
+      <h2 className="text-sm font-semibold text-[rgb(var(--foreground))]">{title}</h2>
+      <p className="text-xs text-[rgb(var(--foreground))]/60">{description}</p>
+    </div>
+    {footer}
+    {children}
   </div>
 );

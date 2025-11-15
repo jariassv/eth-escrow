@@ -36,5 +36,6 @@ lib/
 # Coverage & Logs
 coverage/
 logs/
+tmp/
 
 

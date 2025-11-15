@@ -2,31 +2,31 @@
 
 :root {
   color-scheme: light;
-  --background: 246 248 255;
-  --foreground: 15 23 42;
+  --background: 245 247 252;
+  --foreground: 17 24 39;
   --surface: 255 255 255;
-  --surface-muted: 237 242 255;
-  --border: 223 230 250;
-  --primary: 79 70 229;
+  --surface-muted: 230 238 255;
+  --border: 215 224 245;
+  --primary: 59 130 246; /* azul */
   --primary-foreground: 255 255 255;
-  --accent: 14 165 233;
-  --accent-secondary: 236 72 153;
+  --accent: 56 189 248; /* sky */
+  --accent-secondary: 129 140 248; /* indigo claro */
   --shadow: 15 23 42 / 0.08;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     color-scheme: dark;
-    --background: 8 12 24;
-    --foreground: 226 232 240;
-    --surface: 15 23 42;
-    --surface-muted: 27 38 69;
-    --border: 46 60 96;
-    --primary: 129 140 248;
-    --primary-foreground: 15 23 42;
-    --accent: 45 212 191;
-    --accent-secondary: 244 114 182;
-    --shadow: 15 23 42 / 0.45;
+    --background: 10 13 25;
+    --foreground: 229 231 235;
+    --surface: 18 23 38;
+    --surface-muted: 28 36 58;
+    --border: 47 58 88;
+    --primary: 96 165 250;
+    --primary-foreground: 10 13 25;
+    --accent: 56 189 248;
+    --accent-secondary: 129 140 248;
+    --shadow: 15 23 42 / 0.4;
   }
 }
 
@@ -61,9 +61,9 @@ body::after {
   width: 70vw;
   background: radial-gradient(
     circle at center,
-    rgba(var(--accent), 0.18),
-    rgba(var(--accent-secondary), 0.07) 45%,
-    transparent 70%
+    rgba(var(--accent), 0.16),
+    rgba(var(--accent-secondary), 0.05) 45%,
+    transparent 72%
   );
   filter: blur(60px);
   z-index: -2;
@@ -78,12 +78,25 @@ body::after {
   right: -40vw;
   background: radial-gradient(
     circle at center,
-    rgba(var(--accent-secondary), 0.22),
-    rgba(var(--accent), 0.08) 50%,
-    transparent 75%
+    rgba(var(--accent-secondary), 0.18),
+    rgba(var(--accent), 0.06) 52%,
+    transparent 78%
   );
 }
 
 a {
   color: inherit;
+}
+
+.animate-carousel-x {
+  animation: carousel-scroll-x 24s linear infinite;
+}
+
+@keyframes carousel-scroll-x {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
 }

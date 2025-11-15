@@ -8,7 +8,7 @@ type ButtonSize = "sm" | "md" | "lg";
 
 const variantStyles: Record<ButtonVariant, string> = {
   primary:
-    "bg-[rgb(var(--primary))] text-[rgb(var(--primary-foreground))] hover:bg-blue-600 focus-visible:outline-[rgb(var(--primary))]",
+    "bg-gradient-to-r from-[rgb(var(--primary))] via-[rgb(var(--accent))] to-[rgb(var(--accent-secondary))] text-[rgb(var(--primary-foreground))] shadow-[0_10px_25px_-15px_rgba(59,130,246,0.6)] hover:opacity-95 focus-visible:outline-[rgb(var(--primary))]",
   secondary:
     "bg-[rgb(var(--surface-muted))] text-[rgb(var(--foreground))] hover:bg-[rgb(var(--surface))] focus-visible:outline-[rgb(var(--foreground))]",
   ghost:
