@@ -120,6 +120,10 @@ export const ProjectDetailClient = () => {
   const isRefunding = refundStatus === "pending";
   const isWithdrawing = withdrawStatus === "pending";
   
+  // Validación para aportar: la meta no debe estar alcanzada
+  const isGoalReached = data.status === "funded" || data.progress >= 1;
+  const canFund = isWalletConnected && !isGoalReached;
+  
   // Validación para retirar fondos: solo el creador cuando la campaña está financiada y no ha retirado
   const canWithdraw =
     isWalletConnected &&
@@ -158,9 +162,13 @@ export const ProjectDetailClient = () => {
               title="Aportar al proyecto"
               description="Aprueba y firma tu transacción para apoyar la campaña con el token seleccionado."
               footer={
-                !isWalletConnected && (
+                (!isWalletConnected || isGoalReached) && (
                   <div className="mb-3 rounded-lg border border-dashed border-white/35 bg-white/50 p-2 text-xs text-[rgb(var(--foreground))]/70 dark:border-white/15 dark:bg-white/10">
-                    Conecta tu wallet para poder aportar.
+                    {!isWalletConnected
+                      ? "Conecta tu wallet para poder aportar."
+                      : isGoalReached
+                      ? "La meta de la campaña ya ha sido alcanzada. No se pueden añadir más fondos."
+                      : ""}
                   </div>
                 )
               }
@@ -179,7 +187,7 @@ export const ProjectDetailClient = () => {
                     min="0"
                     step="0.01"
                     placeholder="100"
-                    disabled={!isWalletConnected || isFunding}
+                    disabled={!canFund || isFunding}
                     className={inputClasses}
                     {...register("amount")}
                   />
@@ -189,7 +197,7 @@ export const ProjectDetailClient = () => {
                 </div>
                 <Button
                   type="submit"
-                  disabled={!isWalletConnected || isFunding}
+                  disabled={!canFund || isFunding}
                   isLoading={isFunding}
                   className="w-full"
                 >
