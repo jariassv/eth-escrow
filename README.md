@@ -16,6 +16,7 @@
 ## 📋 Tabla de Contenidos
 
 - [Descripción](#-descripción)
+- [Demo](#-demo)
 - [Características](#-características)
 - [Arquitectura](#-arquitectura)
 - [Requisitos](#-requisitos)
@@ -41,6 +42,14 @@
 - 💰 **Multi-token**: Soporte para múltiples tokens ERC20 previamente autorizados
 - 🔄 **Reembolsos automáticos**: Si la meta no se alcanza, los contribuidores pueden retirar sus fondos
 - ⚡ **Sin intermediarios**: Eliminación de terceros de confianza mediante smart contracts
+
+---
+
+## 🎥 Demo
+
+Puedes ver una demostración del proyecto en el siguiente video:
+
+📹 **[Ver video demo](docs/demo_escrow.mp4)**
 
 ---
 
